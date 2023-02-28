@@ -5,7 +5,16 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 from awsglue.dynamicframe import DynamicFrame
+from awsglue import DynamicFrame
 from pyspark.sql import functions as SqlFuncs
+
+
+def sparkSqlQuery(glueContext, query, mapping, transformation_ctx) -> DynamicFrame:
+    for alias, frame in mapping.items():
+        frame.toDF().createOrReplaceTempView(alias)
+    result = spark.sql(query)
+    return DynamicFrame.fromDF(result, glueContext, transformation_ctx)
+
 
 args = getResolvedOptions(sys.argv, ["JOB_NAME"])
 sc = SparkContext()
@@ -54,9 +63,21 @@ Join_node1677537153994 = Join.apply(
     transformation_ctx="Join_node1677537153994",
 )
 
+# Script generated for node SQL Query
+SqlQuery0 = """
+select * from myDataSource where timestamp >= shareWithResearchAsOfDate
+
+"""
+SQLQuery_node1677560004339 = sparkSqlQuery(
+    glueContext,
+    query=SqlQuery0,
+    mapping={"myDataSource": Join_node1677537153994},
+    transformation_ctx="SQLQuery_node1677560004339",
+)
+
 # Script generated for node Drop Fields
 DropFields_node1677538522814 = DropFields.apply(
-    frame=Join_node1677537153994,
+    frame=SQLQuery_node1677560004339,
     paths=["z", "y", "x"],
     transformation_ctx="DropFields_node1677538522814",
 )
